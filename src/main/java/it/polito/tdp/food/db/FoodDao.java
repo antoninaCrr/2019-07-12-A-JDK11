@@ -6,12 +6,83 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import it.polito.tdp.food.model.Condiment;
+import it.polito.tdp.food.model.Edge;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
 
 public class FoodDao {
+	
+	public List<Food> getFoodsByPortions(Integer p,Map<Integer,Food> mappa){
+		String sql = " SELECT f.food_code, f.display_name, COUNT(p.portion_id) AS cnt "
+				+    " FROM food f, `portion` p "
+				+    " WHERE f.food_code=p.food_code "
+				+    " GROUP BY f.food_code, f.display_name "
+				+    " HAVING cnt <= ? "
+				+    " ORDER BY f.display_name ASC";
+		List<Food> list = new ArrayList<>() ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setInt(1, p);
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				    
+				Food f = new Food(res.getInt("food_code"),res.getString("display_name"));
+				list.add(f);
+				mappa.put(f.getFood_code(), f);
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+		
+	}
+	
+	public List<Edge> getAllEdges(Map<Integer,Food> map){
+		String sql = " SELECT fc1.food_code AS f1Cod, fc2.food_code AS f2Cod, AVG(c.condiment_calories) AS calorie "
+				+ "FROM condiment c, food_condiment fc1, food_condiment fc2 "
+				+ "WHERE fc1.condiment_code = fc2.condiment_code AND fc1.food_code <> fc2.food_code AND fc1.condiment_code = c.condiment_code "
+				+ "GROUP BY fc1.food_code, fc2.food_code";
+		List<Edge> archi = new ArrayList<>();
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				    
+				Food f1 = map.get(res.getInt("f1Cod"));
+				Food f2 = map.get(res.getInt("f2Cod"));
+				if(f1 != null && f2 != null) {
+					Edge e = new Edge (f1,f2,res.getDouble("calorie"));
+					archi.add(e);
+				}
+			}
+			
+			conn.close();
+			return archi ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+		
+		
+		
+		
+	}
+	
+	
 	public List<Food> listAllFoods(){
 		String sql = "SELECT * FROM food" ;
 		try {

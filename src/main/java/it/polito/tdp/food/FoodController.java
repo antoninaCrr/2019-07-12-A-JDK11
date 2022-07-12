@@ -5,8 +5,11 @@
 package it.polito.tdp.food;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.food.model.Adiacente;
+import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -41,7 +44,7 @@ public class FoodController {
     private Button btnSimula; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxFood"
-    private ComboBox<?> boxFood; // Value injected by FXMLLoader
+    private ComboBox<Food> boxFood; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
@@ -49,13 +52,48 @@ public class FoodController {
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Creazione grafo...");
+    	txtResult.appendText("Creazione grafo..."+"\n\n");
+    	int porzioni;
+    	try {
+    		porzioni = Integer.parseInt(this.txtPorzioni.getText());
+    	}catch(NumberFormatException e) {
+    		this.txtResult.appendText("Inserire un valore numerico\n");
+    		return;
+    	}
+    	
+    	model.creaGrafo(porzioni);
+    	this.txtResult.appendText("GRAFO CREATO\n");
+    	this.txtResult.appendText("#VERTICI: "+this.model.nVertici()+"\n");
+    	this.txtResult.appendText("#ARCHI: "+this.model.nArchi()+"\n");
+    	
+    	this.boxFood.setDisable(false);
+    	this.boxFood.getItems().clear();
+    	this.boxFood.getItems().addAll(model.getFood());
+    	this.btnCalorie.setDisable(false);
+
+    	this.txtK.setDisable(false);
+    	this.btnSimula.setDisable(false);
     }
     
     @FXML
     void doCalorie(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Analisi calorie...");
+    	txtResult.appendText("Analisi calorie..."+"\n\n");
+    	
+    	Food f = this.boxFood.getValue();
+    	
+    	if(f == null) {
+    		this.txtResult.appendText("Selezionare un cibo di interesse\n");
+    		return;
+    	}
+    	
+    	this.txtResult.appendText("Lista di adiacenti con calorie massime: ");
+    	this.txtResult.appendText("\n");
+    	List<Adiacente> vicini = model.getAdiacenti(f);
+    	for(int i = 0; i < 5 && i < vicini.size(); i++) { // LA STAMPA DEI 5 CON CAL MAX VIENE FATTA NEL CONTROLLER, NON A LIVELLO DELL'ALGORITMO
+    		this.txtResult.appendText(vicini.get(i).toString()+"\n");
+    		
+    	}
     }
 
     @FXML
@@ -77,5 +115,11 @@ public class FoodController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	
+    	this.btnCalorie.setDisable(true);
+    	this.btnSimula.setDisable(true);
+    	
+    	this.txtK.setDisable(true);
+    	this.boxFood.setDisable(true);
     }
 }
